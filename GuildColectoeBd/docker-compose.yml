@@ -1,0 +1,16 @@
+services:
+  monitorguild:
+    image: sukeee/guild-colectoe-bd:latest
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 2h
+    environment:
+      - RCON_IP=192.168.100.73
+      - RCON_PORT=25575
+      - FILTRAR_GUILDA_SEM_NOME=false
+      - RCON_PASSWORD=unreal
+      - NETWORK_PATH=/palguard
+      - DATABASE_CONNECTION_STRING=Server=192.168.100.84;Database=db-palworld-pvp-insiderhub;Uid=PalAdm;Pwd=sukelord;SslMode=none;
+    volumes:
+      - /mnt/smb/palguard:/palguard

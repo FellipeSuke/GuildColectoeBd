@@ -45,6 +45,7 @@ namespace GuildColectoeBd
                     if (guilds != null)
                     {
                         await InsertOrUpdateMembersAsync(guilds);
+                        DeleteFile(filePath);
                     }
                 }
             }
@@ -53,6 +54,7 @@ namespace GuildColectoeBd
                 Console.WriteLine("Error: " + ex.Message);
             }
         }
+
         public static void InitializeEnv()
         {
             rconIp = Environment.GetEnvironmentVariable("RCON_IP") ?? "192.168.100.73";
@@ -62,6 +64,7 @@ namespace GuildColectoeBd
             networkPath = Environment.GetEnvironmentVariable("NETWORK_PATH") ?? @"\\OPTSUKE01\palguard";
             ConnectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") ?? "Server=192.168.100.84;Database=db-palworld-pvp-insiderhub;Uid=PalAdm;Pwd=sukelord;SslMode=none;";
         }
+
         static async Task<string> CheckForFileAsync(string path)
         {
             string filePath = Path.Combine(path, "guildexport.json");
@@ -200,7 +203,7 @@ namespace GuildColectoeBd
                             await command.ExecuteNonQueryAsync();
                             Console.WriteLine($"Inserting/Updating: {memberId}  {member.NickName}  {guild.Name}");
                         }
-                        
+
                     }
                 }
             }
@@ -211,44 +214,57 @@ namespace GuildColectoeBd
             }
         }
 
-
-
+        static void DeleteFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Console.WriteLine("File deleted: " + filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error deleting the file: " + ex.Message);
+            }
+        }
     }
 
     public class Guild
-        {
-            [JsonProperty("AdminUID")]
-            public string AdminUID { get; set; }
+    {
+        [JsonProperty("AdminUID")]
+        public string AdminUID { get; set; }
 
-            [JsonProperty("CampNum")]
-            public string CampNum { get; set; }
+        [JsonProperty("CampNum")]
+        public string CampNum { get; set; }
 
-            [JsonProperty("Camps")]
-            public Dictionary<string, object> Camps { get; set; }
+        [JsonProperty("Camps")]
+        public Dictionary<string, object> Camps { get; set; }
 
-            [JsonProperty("Level")]
-            public int Level { get; set; }
+        [JsonProperty("Level")]
+        public int Level { get; set; }
 
-            [JsonProperty("Members")]
-            public Dictionary<string, Member> Members { get; set; }
+        [JsonProperty("Members")]
+        public Dictionary<string, Member> Members { get; set; }
 
-            [JsonProperty("Name")]
-            public string Name { get; set; }
-        }
+        [JsonProperty("Name")]
+        public string Name { get; set; }
+    }
 
-        public class Member
-        {
-            [JsonProperty("Exp")]
-            public int Exp { get; set; }
+    public class Member
+    {
+        [JsonProperty("Exp")]
+        public int Exp { get; set; }
 
-            [JsonProperty("Level")]
-            public int Level { get; set; }
+        [JsonProperty("Level")]
+        public int Level { get; set; }
 
-            [JsonProperty("NickName")]
-            public string NickName { get; set; }
+        [JsonProperty("NickName")]
+        public string NickName { get; set; }
 
-            [JsonProperty("Pos")]
-            public string Pos { get; set; }
-        }
-   
+        [JsonProperty("Pos")]
+        public string Pos { get; set; }
+    }
+
 }
