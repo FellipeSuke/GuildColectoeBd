@@ -16,7 +16,7 @@ namespace GuildColectoeBd
 
         static async Task Main(string[] args)
         {
-
+            Console.WriteLine("Colector Guild versão 1.0.0");
             InitializeEnv();
 
             try
