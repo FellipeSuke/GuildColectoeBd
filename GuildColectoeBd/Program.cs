@@ -9,6 +9,7 @@ namespace GuildColectoeBd
     {
         static string rconIp;
         static int rconPort;
+        static int RestartApp;
         static bool FiltrarGuildaSemNome;
         static string rconPassword;
         static string networkPath;
@@ -16,7 +17,7 @@ namespace GuildColectoeBd
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Colector Guild versão 1.0.0");
+            Console.WriteLine("Colector Guild versão 1.0.1");
             InitializeEnv();
 
             try
@@ -30,11 +31,11 @@ namespace GuildColectoeBd
                 try
                 {
                     string response = await rcon.SendCommandAsync("exportguilds");
-                    //Console.WriteLine("Command sent. Response: " + response);
+                    Console.WriteLine("Command sent. Response: " + response);
                 }
                 catch (Exception ex)
                 {
-                    //Console.WriteLine("Error sending command: " + ex.Message);
+                    Console.WriteLine("Error sending command: " + ex.Message);
                 }
 
                 // Verificar a criação do arquivo e processar
@@ -45,7 +46,7 @@ namespace GuildColectoeBd
                     if (guilds != null)
                     {
                         await InsertOrUpdateMembersAsync(guilds);
-                        DeleteFile(filePath);
+                        //DeleteFile(filePath);
                     }
                 }
             }
@@ -53,12 +54,15 @@ namespace GuildColectoeBd
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
+            //await Task.Delay(TimeSpan.FromMinutes(RestartApp));
+            await Task.Delay(TimeSpan.FromHours(RestartApp));
         }
 
         public static void InitializeEnv()
         {
             rconIp = Environment.GetEnvironmentVariable("RCON_IP") ?? "192.168.100.73";
             rconPort = int.TryParse(Environment.GetEnvironmentVariable("RCON_PORT"), out var port) ? port : 25575;
+            RestartApp = int.TryParse(Environment.GetEnvironmentVariable("RESTART_APP_HORA"), out var restart) ? restart : 3;
             FiltrarGuildaSemNome = bool.TryParse(Environment.GetEnvironmentVariable("FILTRAR_GUILDA_SEM_NOME"), out var ativo) ? ativo : false;
             rconPassword = Environment.GetEnvironmentVariable("RCON_PASSWORD") ?? "unreal";
             networkPath = Environment.GetEnvironmentVariable("NETWORK_PATH") ?? @"\\OPTSUKE01\palguard";
@@ -67,7 +71,7 @@ namespace GuildColectoeBd
 
         static async Task<string> CheckForFileAsync(string path)
         {
-            await Task.Delay(30000); // Espera 5 segundos antes de verificar novamente
+            await Task.Delay(30000); // Espera 30 segundos antes de verificar novamente
             string filePath = Path.Combine(path, "guildexport.json");
 
             while (!File.Exists(filePath))
