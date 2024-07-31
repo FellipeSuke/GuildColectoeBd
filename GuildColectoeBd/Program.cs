@@ -67,6 +67,7 @@ namespace GuildColectoeBd
 
         static async Task<string> CheckForFileAsync(string path)
         {
+            await Task.Delay(30000); // Espera 5 segundos antes de verificar novamente
             string filePath = Path.Combine(path, "guildexport.json");
 
             while (!File.Exists(filePath))
