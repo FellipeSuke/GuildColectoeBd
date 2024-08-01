@@ -17,7 +17,7 @@ namespace GuildColectoeBd
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Colector Guild versão 1.0.1");
+            Console.WriteLine(DateTime.Now + " Colector Guild versão 1.0.2");
             InitializeEnv();
 
             try
@@ -25,17 +25,17 @@ namespace GuildColectoeBd
                 var endPoint = new IPEndPoint(IPAddress.Parse(rconIp), rconPort);
                 var rcon = new RCON(endPoint, rconPassword);
                 await rcon.ConnectAsync();
-                Console.WriteLine("Connected to RCON server.");
+                Console.WriteLine(DateTime.Now + " Connected to RCON server.");
 
                 // Enviar comando RCON e aguardar resposta
                 try
                 {
                     string response = await rcon.SendCommandAsync("exportguilds");
-                    Console.WriteLine("Command sent. Response: " + response);
+                    Console.WriteLine(DateTime.Now + " Command sent. Response: " + response);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error sending command: " + ex.Message);
+                    Console.WriteLine(DateTime.Now + " Error sending command: " + ex.Message);
                 }
 
                 // Verificar a criação do arquivo e processar
@@ -46,16 +46,18 @@ namespace GuildColectoeBd
                     if (guilds != null)
                     {
                         await InsertOrUpdateMembersAsync(guilds);
-                        //DeleteFile(filePath);
+                        Console.WriteLine(DateTime.Now + " Insert concluido, clan_temp atualizado com sucesso");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Console.WriteLine(DateTime.Now + " Error: " + ex.Message);
             }
             //await Task.Delay(TimeSpan.FromMinutes(RestartApp));
+            Console.WriteLine(DateTime.Now + " GuildColectorBd finalizado, aguardando " + RestartApp + "h para proxima execução");
             await Task.Delay(TimeSpan.FromHours(RestartApp));
+            Console.WriteLine(DateTime.Now + " Saindo...");
         }
 
         public static void InitializeEnv()
@@ -71,16 +73,17 @@ namespace GuildColectoeBd
 
         static async Task<string> CheckForFileAsync(string path)
         {
+            Console.WriteLine(DateTime.Now + " Waiting for the file to be created...");
             await Task.Delay(30000); // Espera 30 segundos antes de verificar novamente
             string filePath = Path.Combine(path, "guildexport.json");
 
             while (!File.Exists(filePath))
             {
-                Console.WriteLine("Waiting for the file to be created...");
+                Console.WriteLine(DateTime.Now + " Waiting for the file to be created...");
                 await Task.Delay(5000); // Espera 5 segundos antes de verificar novamente
             }
 
-            Console.WriteLine("File found: " + filePath);
+            Console.WriteLine(DateTime.Now + " File found: " + filePath);
             return filePath;
         }
 
@@ -122,7 +125,7 @@ namespace GuildColectoeBd
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error processing the JSON file: " + ex.Message);
+                Console.WriteLine(DateTime.Now + " Error processing the JSON file: " + ex.Message);
                 return null;
             }
         }
@@ -131,10 +134,19 @@ namespace GuildColectoeBd
         {
             try
             {
-
-
                 using var connection = new MySqlConnection(ConnectionString);
                 await connection.OpenAsync();
+                Console.WriteLine(DateTime.Now + " Conexão com banco bem sucedida");
+
+                // Truncate the table before inserting new data
+                var truncateCommandText = "TRUNCATE TABLE `db-palworld-pvp-insiderhub`.clan_temp;";
+                
+                using (var truncateCommand = new MySqlCommand(truncateCommandText, connection))
+                {
+                    Console.WriteLine(DateTime.Now + " Executando " + truncateCommandText);
+                    await truncateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine(DateTime.Now + " TRUNCATE TABLE executado com sucesso");
+                }
 
                 foreach (var guildEntry in guilds)
                 {
@@ -147,25 +159,26 @@ namespace GuildColectoeBd
                         Member member = memberEntry.Value;
 
                         var commandText = @"
-                    INSERT INTO clan_temp (
-                        id, player_name, internal_player_id, player_exp, player_lvl, player_pos,
-                        clan_id, clan_name, clan_admin, clan_camp_num, clan_camps, clan_lvl
-                    )
-                    VALUES (
-                        @id, @player_name, @internal_player_id, @player_exp, @player_lvl, @player_pos,
-                        @clan_id, @clan_name, @clan_admin, @clan_camp_num, @clan_camps, @clan_lvl
-                    )
-                    ON DUPLICATE KEY UPDATE
-                        player_name = VALUES(player_name),
-                        player_exp = VALUES(player_exp),
-                        player_lvl = VALUES(player_lvl),
-                        player_pos = VALUES(player_pos),
-                        clan_name = VALUES(clan_name),
-                        clan_admin = VALUES(clan_admin),
-                        clan_camp_num = VALUES(clan_camp_num),
-                        clan_camps = VALUES(clan_camps),
-                        clan_lvl = VALUES(clan_lvl);
+                INSERT INTO clan_temp (
+                    id, player_name, internal_player_id, player_exp, player_lvl, player_pos,
+                    clan_id, clan_name, clan_admin, clan_camp_num, clan_camps, clan_lvl
+                )
+                VALUES (
+                    @id, @player_name, @internal_player_id, @player_exp, @player_lvl, @player_pos,
+                    @clan_id, @clan_name, @clan_admin, @clan_camp_num, @clan_camps, @clan_lvl
+                )
+                ON DUPLICATE KEY UPDATE
+                    player_name = VALUES(player_name),
+                    player_exp = VALUES(player_exp),
+                    player_lvl = VALUES(player_lvl),
+                    player_pos = VALUES(player_pos),
+                    clan_name = VALUES(clan_name),
+                    clan_admin = VALUES(clan_admin),
+                    clan_camp_num = VALUES(clan_camp_num),
+                    clan_camps = VALUES(clan_camps),
+                    clan_lvl = VALUES(clan_lvl);
                 ";
+
                         if (FiltrarGuildaSemNome)
                         {
                             if (guild.Name != "Guilda sem nome" && guild.Name != "" && guild.Name != null)
@@ -185,9 +198,8 @@ namespace GuildColectoeBd
                                 command.Parameters.AddWithValue("@clan_lvl", guild.Level);
 
                                 await command.ExecuteNonQueryAsync();
-                                Console.WriteLine($"Inserting/Updating: {memberId}  {member.NickName}  {guild.Name}");
+                                Console.WriteLine(DateTime.Now + $"Inserting/Updating: {memberId}  {member.NickName}  {guild.Name}");
                             }
-
                         }
                         else
                         {
@@ -206,18 +218,17 @@ namespace GuildColectoeBd
                             command.Parameters.AddWithValue("@clan_lvl", guild.Level);
 
                             await command.ExecuteNonQueryAsync();
-                            Console.WriteLine($"Inserting/Updating: {memberId}  {member.NickName}  {guild.Name}");
+                            Console.WriteLine(DateTime.Now + $" Inserting: {memberId}  {member.NickName}  {guild.Name}");
                         }
-
                     }
                 }
             }
             catch (Exception ex)
             {
-
-                Console.WriteLine("Erro ao inserir no banco: " + ex.Message);
+                Console.WriteLine(DateTime.Now + " Erro ao inserir no banco: " + ex.Message);
             }
         }
+
 
         static void DeleteFile(string filePath)
         {
